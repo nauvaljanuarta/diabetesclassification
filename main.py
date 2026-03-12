@@ -1,85 +1,113 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split, GridSearchCV
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.svm import SVC
-from sklearn.metrics import (
-    accuracy_score, confusion_matrix,
-    precision_score, recall_score, f1_score,
-    roc_auc_score, classification_report
-)
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
-# =========================
-# 1. Load Data
-# =========================
+# ======================================================
+# 1. Load Dataset
+# ======================================================
 df = pd.read_csv("diabetes.csv")
+print("Ukuran Dataset:", df.shape)
 
-# =========================
-# 2. Data Cleaning
-# =========================
-zero_columns = ['Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI']
 
-for col in zero_columns:
-    df[col] = df[col].replace(0, np.nan)
-    df[col] = df[col].fillna(df[col].median())
+# ======================================================
+# 2. TANPA DATA CLEANING (replikasi jurnal)
+# ======================================================
 
-# =========================
-# 3. Feature & Target
-# =========================
 X = df.drop('Outcome', axis=1)
 y = df['Outcome']
 
-# =========================
-# 4. Standardisasi
-# =========================
+# ======================================================
+# 3. Normalisasi Z-Score (SEBELUM split)
+# ======================================================
 scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+X = scaler.fit_transform(X)
 
-# =========================
-# 5. Split Data
-# =========================
+# ======================================================
+# 4. Split Data (80:20)
+# ======================================================
 X_train, X_test, y_train, y_test = train_test_split(
-    X_scaled, y, test_size=0.2, random_state=42, stratify=y
+    X, y,
+    test_size=0.2,
+    stratify=y
 )
 
-# =========================
-# 6. SVM
-# =========================
-param_grid = {
-    'C': [0.01, 0.1, 1, 10, 100],
-    'kernel': ['linear', 'rbf', 'poly'],
-    'gamma': ['scale', 'auto']
+
+# ======================================================
+# 5. Model
+# ======================================================
+models = {
+    "Naive Bayes": GaussianNB(),
+    "Decision Tree": DecisionTreeClassifier(),
+    "SVM": SVC(C=1.0, kernel='linear', gamma='auto')
 }
 
-grid = GridSearchCV(SVC(class_weight='balanced'), param_grid, cv=5, scoring='f1')
-grid.fit(X_train, y_train)
+results = []
 
-model = grid.best_estimator_
-y_pred = model.predict(X_test)
+for model_name, model in models.items():
 
-# =========================
-# 7. Evaluasi
-# =========================
-accuracy = accuracy_score(y_test, y_pred)
-precision = precision_score(y_test, y_pred)
-recall = recall_score(y_test, y_pred)
-f1 = f1_score(y_test, y_pred)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
 
-model_prob = SVC(**grid.best_params_, probability=True)
-model_prob.fit(X_train, y_train)
-y_prob = model_prob.predict_proba(X_test)[:, 1]
-auc = roc_auc_score(y_test, y_prob)
 
-# Confusion Matrix
-cm = confusion_matrix(y_test, y_pred)
+    acc = accuracy_score(y_test, y_pred)
+    prec = precision_score(y_test, y_pred)
+    rec = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+    cm = confusion_matrix(y_test, y_pred)
 
-print("Best Parameters:", grid.best_params_)
-print("\nAccuracy  :", round(accuracy, 4))
-print("Precision :", round(precision, 4))
-print("Recall    :", round(recall, 4))
-print("F1-Score  :", round(f1, 4))
-print("AUC-ROC   :", round(auc, 4))
-print("\nConfusion Matrix:\n", cm)
+    results.append([model_name, acc*100])
 
-print("\nClassification Report:\n")
-print(classification_report(y_test, y_pred))
+    print("\n====================================")
+    print(f"Model: {model_name}")
+    print("====================================")
+    print(f"Accuracy  : {acc*100:.2f}%")
+    print(f"Precision : {prec*100:.2f}%")
+    print(f"Recall    : {rec*100:.2f}%")
+    print(f"F1-Score  : {f1*100:.2f}%")
+    print("Confusion Matrix:")
+    print(cm)
+
+    # Confusion Matrix Heatmap
+    plt.figure(figsize=(5,4))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+    plt.title(f"Confusion Matrix - {model_name}")
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.show()
+
+# ======================================================
+# 6. Grafik Perbandingan Akurasi
+# ======================================================
+results_df = pd.DataFrame(results, columns=["Model", "Accuracy"])
+
+plt.figure(figsize=(6,5))
+sns.barplot(data=results_df, x="Model", y="Accuracy")
+plt.title("Perbandingan Akurasi Algoritma (80:20)")
+plt.ylabel("Accuracy (%)")
+plt.ylim(0,100)
+plt.tight_layout()
+plt.show()
+
+# ======================================================
+# 7. Visualisasi Decision Tree
+# ======================================================
+dt_model = DecisionTreeClassifier()
+dt_model.fit(X_train, y_train)
+
+plt.figure(figsize=(18,8))
+plot_tree(
+    dt_model,
+    feature_names=df.columns[:-1],
+    class_names=["Non-Diabetes", "Diabetes"],
+    filled=True
+)
+plt.title("Visualisasi Decision Tree")
+plt.show()
