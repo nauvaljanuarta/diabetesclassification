@@ -21,7 +21,7 @@ zero_columns = ['Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI']
 
 for col in zero_columns:
     df[col] = df[col].replace(0, np.nan)
-    df[col].fillna(df[col].median(), inplace=True)
+    df[col] = df[col].fillna(df[col].median())
 
 # =========================
 # 3. Feature & Target
@@ -43,15 +43,15 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # =========================
-# 6. SVM + GridSearch
+# 6. SVM
 # =========================
 param_grid = {
-    'C': [0.1, 1, 10],
-    'kernel': ['linear', 'rbf'],
+    'C': [0.01, 0.1, 1, 10, 100],
+    'kernel': ['linear', 'rbf', 'poly'],
     'gamma': ['scale', 'auto']
 }
 
-grid = GridSearchCV(SVC(), param_grid, cv=5, scoring='accuracy')
+grid = GridSearchCV(SVC(class_weight='balanced'), param_grid, cv=5, scoring='f1')
 grid.fit(X_train, y_train)
 
 model = grid.best_estimator_
@@ -65,7 +65,6 @@ precision = precision_score(y_test, y_pred)
 recall = recall_score(y_test, y_pred)
 f1 = f1_score(y_test, y_pred)
 
-# AUC
 model_prob = SVC(**grid.best_params_, probability=True)
 model_prob.fit(X_train, y_train)
 y_prob = model_prob.predict_proba(X_test)[:, 1]
