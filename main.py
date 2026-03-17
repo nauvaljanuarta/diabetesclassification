@@ -16,43 +16,32 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 df = pd.read_csv("diabetes.csv")
 print("Ukuran Dataset:", df.shape)
 
-# ======================================================
 # 1b. Histogram Distribusi Setiap Fitur
-# ======================================================
 features = df.columns[:-1]  # semua kolom kecuali 'Outcome'
 
 fig, axes = plt.subplots(nrows=2, ncols=4, figsize=(16, 8))
 axes = axes.flatten()
 
 for i, col in enumerate(features):
-    axes[i].hist(df[df['Outcome'] == 0][col], bins=20, alpha=0.6, label='Non-Diabetes', color='steelblue', edgecolor='black')
-    axes[i].hist(df[df['Outcome'] == 1][col], bins=20, alpha=0.6, label='Diabetes', color='salmon', edgecolor='black')
+    axes[i].hist(df[col], bins=20, alpha=0.7, color='steelblue', edgecolor='black')
     axes[i].set_title(col, fontsize=12, fontweight='bold')
     axes[i].set_xlabel('Nilai')
     axes[i].set_ylabel('Frekuensi')
-    axes[i].legend(fontsize=8)
 
-fig.suptitle('Histogram Distribusi Fitur - Diabetes vs Non-Diabetes', fontsize=14, fontweight='bold')
+fig.suptitle('Histogram Distribusi Setiap Fitur', fontsize=14, fontweight='bold')
 plt.tight_layout()
 plt.show()
 
 
-# ======================================================
 # 2. TANPA DATA CLEANING (replikasi jurnal)
-# ======================================================
-
 X = df.drop('Outcome', axis=1)
 y = df['Outcome']
 
-# ======================================================
 # 3. Normalisasi Z-Score (SEBELUM split)
-# ======================================================
 scaler = StandardScaler()
 X = scaler.fit_transform(X)
 
-# ======================================================
 # 4. Split Data (80:20)
-# ======================================================
 X_train, X_test, y_train, y_test = train_test_split(
     X, y,
     test_size=0.2,
@@ -60,9 +49,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 
-# ======================================================
 # 5. Model
-# ======================================================
 models = {
     "Naive Bayes": GaussianNB(),
     "Decision Tree": DecisionTreeClassifier(),
@@ -103,9 +90,7 @@ for model_name, model in models.items():
     plt.ylabel("Actual")
     plt.show()
 
-# ======================================================
 # 6. Grafik Perbandingan Akurasi
-# ======================================================
 results_df = pd.DataFrame(results, columns=["Model", "Accuracy"])
 
 plt.figure(figsize=(6,5))
@@ -116,9 +101,7 @@ plt.ylim(0,100)
 plt.tight_layout()
 plt.show()
 
-# ======================================================
 # 7. Visualisasi Decision Tree
-# ======================================================
 dt_model = DecisionTreeClassifier()
 dt_model.fit(X_train, y_train)
 
