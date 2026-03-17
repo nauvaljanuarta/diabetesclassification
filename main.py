@@ -16,6 +16,26 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 df = pd.read_csv("diabetes.csv")
 print("Ukuran Dataset:", df.shape)
 
+# ======================================================
+# 1b. Histogram Distribusi Setiap Fitur
+# ======================================================
+features = df.columns[:-1]  # semua kolom kecuali 'Outcome'
+
+fig, axes = plt.subplots(nrows=2, ncols=4, figsize=(16, 8))
+axes = axes.flatten()
+
+for i, col in enumerate(features):
+    axes[i].hist(df[df['Outcome'] == 0][col], bins=20, alpha=0.6, label='Non-Diabetes', color='steelblue', edgecolor='black')
+    axes[i].hist(df[df['Outcome'] == 1][col], bins=20, alpha=0.6, label='Diabetes', color='salmon', edgecolor='black')
+    axes[i].set_title(col, fontsize=12, fontweight='bold')
+    axes[i].set_xlabel('Nilai')
+    axes[i].set_ylabel('Frekuensi')
+    axes[i].legend(fontsize=8)
+
+fig.suptitle('Histogram Distribusi Fitur - Diabetes vs Non-Diabetes', fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.show()
+
 
 # ======================================================
 # 2. TANPA DATA CLEANING (replikasi jurnal)
